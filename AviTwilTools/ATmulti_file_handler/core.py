@@ -60,6 +60,7 @@ from avi_tools import VariableDB
 import xml.etree.ElementTree as ET
 import yaml
 from typing import Any, List, Dict, Union, Optional
+from AviTwilTools.folder import Folder
 
 
 class File:
@@ -68,7 +69,7 @@ class File:
     Provides a unified interface for different file formats and common operations.
     """
 
-    def __init__(self, name: str, path: str = None, *, scope: Dict[str, Any] = None,
+    def __init__(self, name: str, path: str | Folder = None, *, scope: Dict[str, Any] = None,
                  data: Optional[Dict[str, Any]] = None):
         """
         Initialize a file object with a given directory path.
@@ -92,10 +93,14 @@ class File:
         if not name:
             raise ValueError("File name cannot be empty.")
         self.name = name
-        if not path:
-            self.path = os.getcwd()
+        if isinstance(path, Folder):
+            self.path = path.full_path
+        elif not path:
+            folder = Folder(os.getcwd())
+            self.path = folder.full_path
         else:
-            self.path = path
+            folder = Folder(path)
+            self.path = folder.full_path
         self.full_path = os.path.join(self.path, name)
         if type(self) == VarDBFile :
             self.scope = scope or {}
@@ -256,7 +261,7 @@ class File:
 class TxtFile(File):
     """Class for handling plain text files."""
 
-    def __new__(cls, name: str, path: str = None):
+    def __new__(cls, name: str, path: str | Folder = None):
         """
         Create a new TxtFile instance, ensuring the directory and file exist.
 
@@ -273,9 +278,13 @@ class TxtFile(File):
             A new instance of TxtFile.
         """
         if not path:
-            path = os.getcwd()
+            folder = Folder(os.getcwd())
+            path = folder.full_path
+        elif isinstance(path,Folder):
+            path = path.full_path
         elif not os.path.exists(path):
-            os.makedirs(path)
+            folder = Folder(path)
+            path = folder.full_path
         if not os.path.exists(os.path.join(path, name)):
             with open(os.path.join(path, name), "wb") as f:
                 pass
@@ -360,9 +369,13 @@ class JsonFile(File):
             A new instance of JsonFile.
         """
         if not path:
-            path = os.getcwd()
+            folder = Folder(os.getcwd())
+            path = folder.full_path
+        elif isinstance(path, Folder):
+            path = path.full_path
         elif not os.path.exists(path):
-            os.makedirs(path)
+            folder = Folder(path)
+            path = folder.full_path
         if not os.path.exists(os.path.join(path, name)):
             with open(os.path.join(path, name), "wb") as f:
                 pass
@@ -458,9 +471,13 @@ class CsvFile(File):
             A new instance of CsvFile.
         """
         if not path:
-            path = os.getcwd()
+            folder = Folder(os.getcwd())
+            path = folder.full_path
+        elif isinstance(path, Folder):
+            path = path.full_path
         elif not os.path.exists(path):
-            os.makedirs(path)
+            folder = Folder(path)
+            path = folder.full_path
         if not os.path.exists(os.path.join(path, name)):
             with open(os.path.join(path, name), "wb") as f:
                 pass
@@ -548,9 +565,13 @@ class DillFile(File):
             A new instance of DillFile.
         """
         if not path:
-            path = os.getcwd()
+            folder = Folder(os.getcwd())
+            path = folder.full_path
+        elif isinstance(path, Folder):
+            path = path.full_path
         elif not os.path.exists(path):
-            os.makedirs(path)
+            folder = Folder(path)
+            path = folder.full_path
         if not os.path.exists(os.path.join(path, name)):
             with open(os.path.join(path, name), "wb") as f:
                 pass
@@ -642,9 +663,13 @@ class XmlFile(File):
             A new instance of XmlFile.
         """
         if not path:
-            path = os.getcwd()
+            folder = Folder(os.getcwd())
+            path = folder.full_path
+        elif isinstance(path, Folder):
+            path = path.full_path
         elif not os.path.exists(path):
-            os.makedirs(path)
+            folder = Folder(path)
+            path = folder.full_path
         if not os.path.exists(os.path.join(path, name)):
             with open(os.path.join(path, name), "wb") as f:
                 pass
@@ -738,9 +763,13 @@ class YamlFile(File):
             A new instance of YamlFile.
         """
         if not path:
-            path = os.getcwd()
+            folder = Folder(os.getcwd())
+            path = folder.full_path
+        elif isinstance(path, Folder):
+            path = path.full_path
         elif not os.path.exists(path):
-            os.makedirs(path)
+            folder = Folder(path)
+            path = folder.full_path
         if not os.path.exists(os.path.join(path, name)):
             with open(os.path.join(path, name), "wb") as f:
                 pass
@@ -836,9 +865,13 @@ class ByteFile(File):
             A new instance of ByteFile.
         """
         if not path:
-            path = os.getcwd()
+            folder = Folder(os.getcwd())
+            path = folder.full_path
+        elif isinstance(path, Folder):
+            path = path.full_path
         elif not os.path.exists(path):
-            os.makedirs(path)
+            folder = Folder(path)
+            path = folder.full_path
         if not os.path.exists(os.path.join(path, name)):
             with open(os.path.join(path, name), "wb") as f:
                 pass
@@ -926,9 +959,13 @@ class VarDBFile(File):
             A new instance of VarDBFile.
         """
         if not path:
-            path = os.getcwd()
+            folder = Folder(os.getcwd())
+            path = folder.full_path
+        elif isinstance(path, Folder):
+            path = path.full_path
         elif not os.path.exists(path):
-            os.makedirs(path)
+            folder = Folder(path)
+            path = folder.full_path
         if not os.path.exists(os.path.join(path, name)):
             with VariableDB(os.path.join(path, name), scope=scope, data=data) as f:
                 pass

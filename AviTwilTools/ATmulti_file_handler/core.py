@@ -1015,7 +1015,7 @@ class VarDBFile(File):
             f.add(data)
 
 
-def file(name: str, path: str = None, *, scope: Dict[str, Any] = None, data: Optional[Dict[str, Any]] = None):
+def file(name: str, path: str | Folder = None, *, scope: Dict[str, Any] = None, data: Optional[Dict[str, Any]] = None):
     """
     Factory function to create an appropriate File subclass
     based on the file extension.
@@ -1024,7 +1024,7 @@ def file(name: str, path: str = None, *, scope: Dict[str, Any] = None, data: Opt
     ----------
     name : str
         Name of the file (including extension).
-    path : str, optional
+    path : str | Folder optional
         Directory where the file should be stored.
     scope : dict, optional
         Variable scope (used only for VarDBFile).

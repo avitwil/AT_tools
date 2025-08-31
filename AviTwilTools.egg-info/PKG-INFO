@@ -1,6 +1,6 @@
 Metadata-Version: 2.4
 Name: AviTwilTools
-Version: 1.0.3
+Version: 1.0.5
 Summary: Unified Python package for folder and file management
 Author-email: Avi Twil <avitwil@gmail.com>
 License: MIT
@@ -25,43 +25,47 @@ Dynamic: license-file
 
 # AviTwilTools
 
-**Unified Python Package for Folder and File Management**
-
-AT_tools is a Python package designed to simplify filesystem management. It provides a unified interface to work with folders and multiple file types, offering robust features for creating, reading, writing, moving, copying, and deleting files and folders.
+**AviTwilTools** is a Python utility library that provides a **unified API for handling multiple file formats** and an **in-memory folder graph** that mirrors your filesystem.
+It makes working with files and directories simple, consistent, and Pythonic.
 
 **Author:** Avi Twil
-**GitHub:** [https://github.com/avitwil/AT\_tools](https://github.com/avitwil/AT_tools)
+**GitHub:** [avitwil/AT\_tools](https://github.com/avitwil/AT_tools)
+**PyPI:** [AviTwilTools](https://pypi.org/project/AviTwilTools/)
 
 ---
 
-## Features
+## ✨ Features
 
-### Folder Management (`AviTwilTools.folder`)
+* **Unified File API**
+  All file types support:
+  `read()`, `write(data)`, `append(data)`, `copy(dst)`, `move(dst)`, `delete()`, `exist()`
 
-* Create and manage nested folders with automatic hierarchy tracking.
-* Add, remove, move, or copy folders safely.
-* Recursively delete folders and all contents.
-* Print folder tree structures for visualization.
-* Automatically register all subfolders in the internal mapping.
+* **Supported file formats**
 
-### File Management (`AviTwilTools.file`)
+  * `TxtFile` → `.txt`
+  * `JsonFile` → `.json`
+  * `CsvFile` → `.csv`
+  * `YamlFile` → `.yml`, `.yaml`
+  * `XmlFile` → `.xml`
+  * `ByteFile` → `.bin`, `.img`, `.exe`, `.jpg`
+  * `DillFile` → `.dill`
+  * `VarDBFile` → `.db` (**default scope = `globals()`**)
 
-* Unified interface for multiple file formats:
+* **Folder abstraction**
 
-  * `TxtFile` – Plain text (.txt)
-  * `JsonFile` – JSON (.json)
-  * `CsvFile` – CSV (.csv)
-  * `DillFile` – Python serialized objects (.dill)
-  * `XmlFile` – XML files (.xml)
-  * `YamlFile` – YAML files (.yml, .yaml)
-  * `ByteFile` – Binary files (.bin, .exe, .img, .jpg)
-  * `VarDBFile` – Custom VariableDB files (.db)
-* Factory function `file()` automatically returns the correct file type instance based on the file extension.
-* Supports `read()`, `write()`, `append()`, `copy()`, `move()`, and `delete()`.
+  * Each `Folder` object represents a real directory.
+  * Instances are cached (singleton-per-path).
+  * Auto-creates directories if missing.
+  * Navigate with attributes (`folder.sub`) or indexing (`folder["file.txt"]`).
+  * Print tree structure with `print_tree()`.
+  * Supports `copy()`, `move()`, `remove()`, `recursive_delete()`, etc.
+
+* **Factory function**
+  `file("name.ext")` returns the correct `File` subclass automatically.
 
 ---
 
-## Installation
+## 📦 Installation
 
 Install directly from PyPI:
 
@@ -69,89 +73,282 @@ Install directly from PyPI:
 pip install AviTwilTools
 ```
 
+No extra dependencies required.
+
 ---
 
-## Quick Start
+## ⚡ Quick Examples
 
-### Folder Example
+### Text and JSON
 
 ```python
-from AviTwilTools import Folder
+from AviTwilTools import TxtFile, JsonFile
 
-# Create or access a folder
-root = Folder("data")
+# TXT
+txt = TxtFile("hello.txt")
+txt.write("Hello")
+txt.append(" World")
+print(txt.read())   # -> "Hello World"
 
-# Create nested folders automatically
-sub = Folder("data/names/avi")
-
-# Add folder manually
-root.add(sub)
-
-# Print folder structure
-root.print_tree()
-
-# List contents
-print(root.list_dir())
+# JSON
+j = JsonFile("data.json")
+j.write({"a": 1})
+j.append({"b": 2})
+print(j.read())     # -> {"a": 1, "b": 2}
 ```
 
-### File Example
+---
+
+### CSV, YAML, XML
+
+```python
+from AviTwilTools import CsvFile, YamlFile, XmlFile
+import xml.etree.ElementTree as ET
+
+# CSV
+c = CsvFile("table.csv")
+c.write([["id", "name"], [1, "Alice"]])
+c.append([2, "Bob"])
+print(c.read())
+
+# YAML
+y = YamlFile("config.yaml")
+y.write({"debug": True})
+y.append({"workers": 4})
+print(y.read())
+
+# XML
+root = ET.Element("root")
+x = XmlFile("doc.xml")
+x.write(root)
+x.append(ET.Element("child"))
+print(x.read().tag)   # -> "root"
+```
+
+---
+
+### Binary & Dill (Python objects)
+
+```python
+from AviTwilTools import ByteFile, DillFile
+
+# Binary file
+b = ByteFile("blob.bin")
+b.write(b"\x00\xFF")
+b.append(b"\x10")
+print(len(b.read()))
+
+# Dill (Python object serialization)
+d = DillFile("obj.dill")
+d.write({"k": [1, 2, 3]})
+print(d.read())
+```
+
+---
+
+### VarDBFile 
+
+```python
+from AviTwilTools import VarDBFile
+
+x = 1
+y = 2
+db = VarDBFile("store.db",scope=globals())
+db.write(x)
+db.append(y)
+
+print(db.read())   # -> {"x": 1, "y": 2}
+print(x)           # x is injected into globals()
+```
+
+
+
+---
+
+### Folder Navigation
+
+```python
+from AviTwilTools import Folder, TxtFile
+
+root = Folder("project")
+sub = Folder("project/folder1/folder2")
+
+TxtFile("myfile.txt", sub).write("Nested Hello")
+
+print(root.folder1.folder2["myfile.txt"].read())
+# -> "Nested Hello"
+
+root.print_tree()
+```
+
+---
+
+### Factory Function
 
 ```python
 from AviTwilTools import file
 
-# Text file
-txt = file("data/names/avi/info.txt")
-txt.write("Hello Avi!")
-print(txt.read())  # -> Hello Avi!
-
-# JSON file
-json_file = file("data/config.json")
-json_file.write({"key": "value"})
-data = json_file.read()
-print(data)  # -> {"key": "value"}
-
-# Database append
-db_file = file("data/config.db", scope={"x": 1}, data={"a": 10})
-db_file.append({"b": 20})
-print(db_file.read())  # -> {"a": 10, "b": 20}
+f = file("notes.txt")    # Returns TxtFile
+f.write("Hello from factory")
+print(f.read())
 ```
 
-### Folder + File Example
+---
+
+## 🧩 Mini Project Example
 
 ```python
-from AviTwilTools import Folder, file
+from AviTwilTools import Folder, TxtFile, JsonFile, CsvFile, YamlFile, file
 
-# Create folder
-root = Folder("projects")
-root._map_folder()  # Automatically map all subfolders
+root = Folder("project")
+data = Folder("project/data")
+reports = Folder("project/reports")
 
-# Create a file inside the folder
-f = file("projects/demo/readme.txt")
-f.write("This is a demo file.")
-print(f.read())  # -> This is a demo file.
+# Create files in different formats
+TxtFile("readme.txt", root).write("This is my project")
+JsonFile("config.json", root).write({"version": "1.0", "author": "Avi Twil"})
+CsvFile("users.csv", data).write([["id", "name"], [1, "Alice"], [2, "Bob"]])
+YamlFile("settings.yaml", data).write({"debug": True, "workers": 4})
+file("log.txt", reports).write("System started...")
+
+# Read files using folder navigation
+print(root["readme.txt"].read())         
+print(root["config.json"].read())        
+print(root.data["users.csv"].read())     
+print(root.data["settings.yaml"].read()) 
+print(root.reports["log.txt"].read())    
+
+# Show tree
+root.print_tree()
+```
+
+Example output:
+
+```
+project/
+├─ data/
+│  ├─ users.csv
+│  └─ settings.yaml
+├─ reports/
+│  └─ log.txt
+├─ readme.txt
+└─ config.json
 ```
 
 ---
 
-## Documentation
+## 📚 API Reference
 
-* Folder Management: `Folder` class
-* File Management: `file()` factory and all file subclasses (`TxtFile`, `JsonFile`, etc.)
+### 📂 Folder
 
-For full API reference, see the source code in [`AT_tools`](https://github.com/avitwil/AT_tools).
+Represents a filesystem folder mirrored in memory.
+Each path is cached (singleton-per-path). Auto-creates directories if missing.
+
+**Constructor**
+
+```python
+Folder(path: str = None)
+```
+
+**Key methods**
+
+* `add(item: File | Folder)`
+* `remove(folder_name: str)`
+* `move(target_folder: Folder)`
+* `copy(target_folder: Folder) -> Folder`
+* `recursive_delete()`
+* `parent() -> Folder`
+* `list_dir() -> dict`
+* `print_tree(prefix="", is_last=True)`
+* `_map_folder()`
+
+**Special access**
+
+* `folder.subfolder`
+* `folder["file.txt"]`
+* `item in folder`
 
 ---
 
-## Notes
+### 📄 File (base class)
 
-* All file classes ensure the file and parent directories exist.
-* Folder operations are hierarchical and automatically track child folders.
-* Designed for Python 3.10+.
+Defines a unified interface for all file types.
+
+**Common methods**
+
+* `read() -> Any`
+* `write(data: Any) -> None`
+* `append(data: Any) -> None`
+* `exist() -> bool`
+* `copy(destination: str) -> str`
+* `move(destination: str) -> str`
+* `delete() -> None`
 
 ---
 
-## License
+### 📑 TxtFile
 
-MIT License
+* `read() -> str`
+* `write(data: str)`
+* `append(data: str)`
 
+### 📑 JsonFile
 
+* `read() -> Any`
+* `write(data: Any)`
+* `append(data: dict | list)`
+
+### 📑 CsvFile
+
+* `read() -> List[List[str]]`
+* `write(data: List[List[str]])`
+* `append(data: List[str])`
+
+### 📑 YamlFile
+
+* `read() -> Any`
+* `write(data: Any)`
+* `append(data: dict | list)`
+
+### 📑 XmlFile
+
+* `read() -> Element`
+* `write(data: Element)`
+* `append(data: Element)`
+
+### 📑 ByteFile
+
+* `read() -> bytes`
+* `write(data: bytes)`
+* `append(data: bytes)`
+
+### 📑 DillFile
+
+* `read() -> Any`
+* `write(data: Any)`
+* `append(data: Any)`
+
+### 📑 VarDBFile
+
+* **Default scope = `globals()`**
+* `read(scope=None) -> dict`
+* `write(data: Any)` – clears and writes.
+* `append(data: Any)` – adds to VariableDB.
+
+---
+
+### 🏭 Factory Function
+
+```python
+from AviTwilTools import file
+
+f = file("notes.txt")     # TxtFile
+f2 = file("data.json")    # JsonFile
+f3 = file("store.db")     # VarDBFile
+```
+
+---
+
+## 📝 License
+
+MIT License. See [GitHub repo](https://github.com/avitwil/AT_tools) for details.
